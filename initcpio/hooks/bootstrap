@@ -1,0 +1,58 @@
+#!/usr/bin/ash
+
+run_hook() {
+   echo "mounting pts"
+
+   if [ ! -z "$host" ]; then
+      hostname "$host"
+   fi
+
+   mkdir -p /dev/pts || true
+   mkdir -p /dev/shm || true
+   mkdir -p /sys/fs/cgroup || true
+
+   mount -t devpts -o rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=666 devpts /dev/pts
+   mount -t cgroup2 none /sys/fs/cgroup
+   mount -t tmpfs tmpfs /dev/shm
+   ln -s /proc/self/fd /dev/fd
+
+   seed=$(blkid -t LABEL="cidata" -o device)
+   if [ -z "$seed" ]; then
+      echo "no seed disk found"
+      exit 1
+   fi
+
+   mkdir -p /seed
+   mount -t vfat "$seed" /seed
+}
+
+fill_etc_hosts() {
+   mkdir -p /new_root/etc
+echo > /new_root/etc/hosts '127.0.0.1   localhost
+127.0.1.1   '$(hostname)'
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters'
+}
+
+run_latehook() {
+   echo "settign up environment"
+   export HOME=/root
+   export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+   mkdir -p /new_root/etc || true
+
+   echo "setting up system"
+   /heroinit /seed /new_root
+
+   # we only care that an outgoing packet arrives at the gateway
+   ping -c1 -w1 8.8.8.8
+
+   echo "fill /etc/hosts"
+   fill_etc_hosts
+}
+
+# vim: set ft=sh ts=4 sw=4 et:
