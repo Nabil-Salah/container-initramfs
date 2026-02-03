@@ -1,5 +1,4 @@
 FROM archlinux as builder
-ENV KCFLAGS=-std=gnu11
 RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm linux mkinitcpio inetutils base-devel bc python3 pahole
 WORKDIR /opt
