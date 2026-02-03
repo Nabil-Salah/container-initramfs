@@ -1,8 +1,6 @@
 #!env sh
 set +e
 
-# Copy the heroinit binary
-cp tempbinary heroinit
 strip heroinit
 
 docker build -t kernel .
