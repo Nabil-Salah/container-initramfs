@@ -1,0 +1,93 @@
+#!/bin/ash
+# Minimal init_functions for Ubuntu-based initramfs (replaces mkinitcpio's version)
+# Busybox ash compatible - no bashisms
+
+msg() { echo ":: $*"; }
+err() { echo "ERROR: $*" >&2; }
+log() { echo "$*"; }
+
+launch_interactive_shell() { 
+    if [ "$1" = "--exec" ]; then
+        exec /bin/sh
+    else
+        /bin/sh
+    fi
+}
+
+rdlogger_start() { :; }
+rdlogger_stop() { :; }
+
+mount_setup() { 
+    mount -t proc proc /proc
+    mount -t sysfs sys /sys
+    mount -t devtmpfs dev /dev
+}
+
+parse_cmdline() {
+    # Parse kernel command line into variables
+    # Reads from stdin (init passes </proc/cmdline)
+    while read -r cmdline; do
+        for param in $cmdline; do
+            case "$param" in
+                *=*)
+                    key="${param%%=*}"
+                    value="${param#*=}"
+                    # Sanitize key: only allow alphanumeric and underscore
+                    # Reject keys starting with numbers or containing invalid chars
+                    case "$key" in
+                        [0-9]*|*[!a-zA-Z0-9_]*)
+                            # Invalid variable name, skip
+                            continue
+                            ;;
+                    esac
+                    # Export as shell variable using eval with proper quoting
+                    eval "export $key=\"\$value\""
+                    ;;
+                *)
+                    # Flag without value (e.g., "rw", "quiet")
+                    # Sanitize: only allow valid variable names
+                    case "$param" in
+                        [0-9]*|*[!a-zA-Z0-9_]*)
+                            continue
+                            ;;
+                    esac
+                    eval "export $param=y"
+                    ;;
+            esac
+        done
+    done
+}
+
+resolve_device() { echo "$1"; }
+fsck_root() { :; }
+
+run_hookfunctions() {
+    # Args: $1=function_name, $2=description, $3...=hook_names
+    local func="$1"
+    local desc="$2"
+    shift 2
+
+    # Iterate over remaining arguments (hook names)
+    for hook in "$@"; do
+        # Skip empty hook names
+        [ -z "$hook" ] && continue
+
+        # Check if hook file exists
+        if [ ! -f "/hooks/$hook" ]; then
+            continue
+        fi
+
+        # Unset the function before sourcing to detect if hook defines it
+        unset -f "$func" 2>/dev/null
+
+        # Source the hook file
+        . "/hooks/$hook"
+
+        # Check if the function was defined by the hook
+        if type "$func" >/dev/null 2>&1; then
+            msg "Running $desc [$hook]"
+            # Call the function
+            "$func"
+        fi
+    done
+}
