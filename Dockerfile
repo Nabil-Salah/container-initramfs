@@ -23,4 +23,4 @@ RUN KERNELVERSION=$(ls /lib/modules) mkinitcpio -D /usr/lib/initcpio -D initcpio
 
 FROM scratch
 COPY --from=builder /root/initramfs-linux.img /
-COPY --from=builder /opt/linux-6.8.0/arch/x86/boot/compressed/vmlinux.bin /kernel
+COPY --from=builder /opt/linux-6.8/arch/x86/boot/compressed/vmlinux.bin /kernel
