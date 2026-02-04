@@ -1,7 +1,7 @@
 FROM archlinux as builder
 RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm linux mkinitcpio inetutils base-devel bc python3 pahole \
-    flex bison elfutils dwarves zstd libelf perl openssl cpio
+    flex bison elfutils zstd libelf perl openssl cpio
 WORKDIR /opt
 RUN curl -O https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.21.tar.xz
 RUN tar -xf linux-6.1.21.tar.xz

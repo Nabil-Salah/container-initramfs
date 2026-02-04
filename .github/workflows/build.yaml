@@ -23,12 +23,40 @@ jobs:
         run: |
           commit=$(git rev-parse --short HEAD)
           echo "name=cloud-container-${commit}" >> $GITHUB_OUTPUT
-      - name: Publish flist (tf-autobuilder, ${{ steps.package.outputs.name }})
-        if: success()
-        uses: threefoldtech/publish-flist@master
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          token: ${{ secrets.HUB_JWT }}
-          action: publish
-          user: tf-autobuilder
-          root: output/${{ inputs.package }}
-          name: ${{ steps.package.outputs.name }}.flist
+          tag_name: v${{ github.run_number }}-${{ steps.package.outputs.name }}
+          release_name: Release ${{ steps.package.outputs.name }}
+          draft: false
+          prerelease: false
+      - name: Upload kernel
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/kernel
+          asset_name: kernel
+          asset_content_type: application/octet-stream
+      - name: Upload initramfs
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/initramfs-linux.img
+          asset_name: initramfs-linux.img
+          asset_content_type: application/octet-stream
+      - name: Upload hypervisor firmware
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/hypervisor-fw
+          asset_name: hypervisor-fw
+          asset_content_type: application/octet-stream
