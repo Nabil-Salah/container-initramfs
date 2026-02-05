@@ -69,4 +69,4 @@ RUN cd initramfs && \
 
 FROM scratch
 COPY --from=builder /root/initramfs-linux.img /
-COPY --from=builder /opt/linux-6.8/arch/x86/boot/compressed/vmlinux.bin /kernel
+COPY --from=builder /opt/linux-6.8/arch/x86/boot/bzImage /kernel
