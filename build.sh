@@ -3,7 +3,10 @@ set +e
 
 strip heroinit
 
-docker build -t kernel .
+# Only build if image doesn't exist (allows CI to pre-build with caching)
+if ! docker image inspect kernel:latest >/dev/null 2>&1; then
+    docker build -t kernel .
+fi
 
 tmp=$(mktemp -d)
 cleanup() {
