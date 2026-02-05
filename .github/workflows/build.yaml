@@ -9,6 +9,8 @@ jobs:
   build:
     name: Building cloud-container
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -34,40 +36,13 @@ jobs:
         run: |
           commit=$(git rev-parse --short HEAD)
           echo "name=cloud-container-${commit}" >> $GITHUB_OUTPUT
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "tag=v${{ github.run_number }}-${commit}" >> $GITHUB_OUTPUT
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}-${{ steps.package.outputs.name }}
-          release_name: Release ${{ steps.package.outputs.name }}
-          draft: false
-          prerelease: false
-      - name: Upload kernel
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/kernel
-          asset_name: kernel
-          asset_content_type: application/octet-stream
-      - name: Upload initramfs
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/initramfs-linux.img
-          asset_name: initramfs-linux.img
-          asset_content_type: application/octet-stream
-      - name: Upload hypervisor firmware
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/hypervisor-fw
-          asset_name: hypervisor-fw
-          asset_content_type: application/octet-stream
+          tag_name: ${{ steps.package.outputs.tag }}
+          name: Release ${{ steps.package.outputs.name }}
+          files: |
+            ./output/kernel
+            ./output/initramfs-linux.img
+            ./output/hypervisor-fw
