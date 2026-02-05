@@ -19,7 +19,9 @@ RUN make olddefconfig && make -j $(nproc)
 
 # Build initramfs manually using busybox
 WORKDIR /root
-RUN mkdir -p initramfs/{bin,sbin,etc,proc,sys,dev,new_root,seed,usr/bin,usr/sbin,lib,lib64,hooks}
+RUN mkdir -p initramfs/bin initramfs/sbin initramfs/etc initramfs/proc \
+    initramfs/sys initramfs/dev initramfs/new_root initramfs/seed \
+    initramfs/usr/bin initramfs/usr/sbin initramfs/lib initramfs/lib64 initramfs/hooks
 
 # Install busybox and create symlinks
 RUN cp /bin/busybox initramfs/bin/busybox && \
